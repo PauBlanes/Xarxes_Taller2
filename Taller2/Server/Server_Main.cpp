@@ -10,69 +10,34 @@ using namespace sf;
 int main()
 {
 	cout << "Server" << endl;
-	//PER PROVAR QUE FUNCIONÉS
-	/*sf::IpAddress ip = sf::IpAddress::getLocalAddress();
+	//ESTABLIM CONEXIÓ
+	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
 	sf::TcpSocket socket;
-	char connectionType, mode;
-	char buffer[2000];
-	std::size_t received;
-	std::string text = "Connected to: ";
-
-	std::cout << "Enter (s) for Server, Enter (c) for Client: ";
-	std::cin >> connectionType;
-
-	if (connectionType == 's')
-	{
-		sf::TcpListener listener;
-		listener.listen(5000);
-		listener.accept(socket);
-		text += "Server";
-		mode = 's';
-		listener.close();
+	Socket::Status status;
+	sf::TcpListener listener;
+	
+	//Comprovem el port
+	status = listener.listen(5000);
+	if (status == Socket::Done)
+		cout << "port ok" << endl;
+	else
+		cout << "port error" << endl;
+	
+	//Esperem a que es conecti tothom
+	listener.setBlocking(false);
+	int maxPlayers = 2;
+	int numPlayers = 0;
+	while (numPlayers < maxPlayers) {
+		status = listener.accept(socket);
+		if (status == Socket::Done) {
+			std::cout << "Client " << numPlayers << " connected" << std::endl;
+			numPlayers++;
+		}		
 	}
-	else if (connectionType == 'c')
-	{
-		socket.connect(ip, 5000);
-		text += "Client";
-		mode = 'r';
-	}
-
-	socket.send(text.c_str(), text.length() + 1);
-	socket.receive(buffer, sizeof(buffer), received);
-
-	std::cout << buffer << std::endl;
-
-	bool done = false;
-	while (!done)
-	{
-		if (mode == 's')
-		{
-			std::getline(std::cin, text);
-			if (text.length() > 0)
-			{
-				socket.send(text.c_str(), text.length() + 1);
-				mode = 'r';
-				if (text == "exit")
-				{
-					break;
-				}
-			}
-		}
-		else if (mode == 'r')
-		{
-			socket.receive(buffer, sizeof(buffer), received);
-			if (received > 0)
-			{
-				std::cout << "Received: " << buffer << std::endl;
-				mode = 's';
-				if (strcmp(buffer, "exit") == 0)
-				{
-					break;
-				}
-			}
-		}
-	}
-
-	socket.disconnect();*/
+	cout << "All players are connected" << endl;
+	listener.close();
+	system("pause");
+	
+	
 	return 0;
 }
