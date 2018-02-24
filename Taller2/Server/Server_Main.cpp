@@ -96,8 +96,10 @@ void ServerManager()
 					SendAllPlayers("New client connected!", client);
 
 					//Si tots els jugadors ja estan conectats avisem
-					if (clients.size() == maxPlayers)
+					if (clients.size() == maxPlayers) {
 						cout << "Todos los jugadores estan conectados!" << endl;
+						SendAllPlayers("All players are connected", NULL);
+					}
 
 				}
 				else
@@ -119,14 +121,18 @@ void ServerManager()
 					if (selector.isReady(client))
 					{
 						// The client has sent some data, we can receive it
-						Packet packet;
-						status = client.receive(packet);
-						if (status == Socket::Done && clients.size() == maxPlayers) //si estan tots els jugadors ja podem començar a rebre i enviar missatges.
+						//Packet packet;
+						char buffer[500];
+						size_t received;
+						status = client.receive(buffer, sizeof(buffer), received);						
+						if (status == Socket::Done /*&& clients.size() == maxPlayers*/) //si estan tots els jugadors ja podem començar a rebre i enviar missatges.
 																					//Pero ho posem aqui i a dalt pq igualment volem comprovar desconnexions
 						{
-							string strRec;
-							packet >> strRec;
-							cout << "He recibido " << strRec << " del puerto " << client.getRemotePort() << endl;
+							buffer[received] = '\0';
+							string strRec = buffer;
+							//packet >> strRec;
+							cout << "He recibido '" << strRec << "' del puerto " << client.getRemotePort() << endl;
+							SendAllPlayers(strRec, NULL);
 						}
 						else if (status == Socket::Disconnected)
 						{
