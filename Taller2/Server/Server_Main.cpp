@@ -16,37 +16,7 @@ void SendAllPlayers(string msg, TcpSocket* clientToExclude);
 
 int main()
 {
-	ServerManager();
-	
-	/*cout << "Server" << endl;
-	//ESTABLIM CONEXIÓ
-	sf::IpAddress ip = sf::IpAddress::getLocalAddress();	
-	Socket::Status status;
-	sf::TcpListener listener;	
-	
-	//Comprovem el port
-	status = listener.listen(5000);
-	if (status == Socket::Done)
-		cout << "port ok" << endl;
-	else
-		cout << "port error" << endl;
-	
-	//Esperem a que es conecti tothom
-	listener.setBlocking(false);
-	int maxPlayers = 2;
-	vector<TcpSocket> sockets(maxPlayers);
-	int connectedPlayers = 0;
-	while (connectedPlayers < maxPlayers) {
-		status = listener.accept(sockets[connectedPlayers]);
-		if (status == Socket::Done) {
-			std::cout << "Client " << connectedPlayers << " connected" << std::endl;
-			connectedPlayers++;
-		}		
-	}
-	cout << "All players are connected" << endl;
-	listener.close();
-	system("pause");*/
-	
+	ServerManager();	
 	
 	return 0;
 }
@@ -100,6 +70,9 @@ void ServerManager()
 						cout << "Todos los jugadores estan conectados!" << endl;
 						SendAllPlayers("All players are connected", NULL);
 					}
+					else {
+						SendAllPlayers("Waiting for players...", NULL);
+					}
 
 				}
 				else
@@ -125,7 +98,7 @@ void ServerManager()
 						char buffer[500];
 						size_t received;
 						status = client.receive(buffer, sizeof(buffer), received);						
-						if (status == Socket::Done /*&& clients.size() == maxPlayers*/) //si estan tots els jugadors ja podem començar a rebre i enviar missatges.
+						if (status == Socket::Done && clients.size() == maxPlayers) //si estan tots els jugadors ja podem començar a rebre i enviar missatges.
 																					//Pero ho posem aqui i a dalt pq igualment volem comprovar desconnexions
 						{
 							buffer[received] = '\0';
@@ -143,7 +116,8 @@ void ServerManager()
 						}
 						else
 						{
-							cout << "Error al recibir de " << client.getRemotePort() << endl;
+							if (clients.size() == maxPlayers) //pq sino ens imprimeix error i simplement es que encara no volem rebre missatges
+								cout << "Error al recibir de " << client.getRemotePort() << endl;
 						}
 					}
 					//Si volem borrar elements de la llista hem de controlar que no ens sortim fora amb l'iterador
