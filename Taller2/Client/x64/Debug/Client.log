@@ -1,2 +1,4 @@
 ﻿  Client_Main.cpp
-  Client.vcxproj -> C:\Users\pblan\Documents\GitHub\Xarxes_Taller2\Taller2\x64\Debug\Client.exe
+c:\users\飘雪柳絮\desktop\xarxes_taller2\taller2\client\client_main.cpp(153): warning C4244: 'argumento': conversión de '::size_t' a 'float'; posible pérdida de datos
+c:\users\飘雪柳絮\desktop\xarxes_taller2\taller2\client\client_main.cpp(24): warning C4101: 'received': variable local sin referencia
+  Client.vcxproj -> C:\Users\飘雪柳絮\Desktop\Xarxes_Taller2\Taller2\x64\Debug\Client.exe

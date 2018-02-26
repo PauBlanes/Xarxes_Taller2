@@ -7,72 +7,213 @@
 using namespace std;
 using namespace sf;
 
+sf::Socket::Status VSend(sf::TcpSocket* sock, string msg);
+void receiveText(sf::TcpSocket* sock, std::vector<std::string>* aMensajes, char buffer[]);
+
 int main()
 {
+
 	cout << "Client" << endl;
-	//PER PROVAR QUE FUNCIONÉS
-	/*sf::IpAddress ip = sf::IpAddress::getLocalAddress();
+	//PER PROVAR QUE FUNCION
+	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
 	sf::TcpSocket socket;
-	char connectionType, mode;
+	sf::TcpListener LISTEN;
+	
+	char connectionType;
 	char buffer[2000];
 	std::size_t received;
-	std::string text = "Connected to: ";
+	std::string intro = "Connected to: ";
 
 	std::cout << "Enter (s) for Server, Enter (c) for Client: ";
 	std::cin >> connectionType;
+
+	
+	//1.CONNECTARSE AL SERIDOR-ok
+	//	1.2VISUALITZAR-ok
+	//2.RECIBIR UN AVISO CUANDO SE CONNECTE UN CLIENTE NUEVO-ok
+	//3.RECIBIR UN AVISO CUANDO SE DESCONECTE UN CLIENTE-ok
+	//4.ENVIAR SUS MENSAJES-ok
+	//5.RECIBIR LOS MENSAJES DE LOS DEM'AS A TRAV'ES DEL SERVIDOR-ok
+
+
+	std::vector<std::string> aMensajes;
+	aMensajes.push_back(intro);
+
+	sf::Vector2i screenDimensions(800, 600);
+
+	sf::RenderWindow window;
+
+
+	sf::Font font;
+	if (!font.loadFromFile("courbd.ttf"))
+	{
+		std::cout << "Can't load the font file" << std::endl;
+	}
+
+	sf::String mensaje = ">";
+
+	sf::Text chattingText(mensaje, font, 14);
+	chattingText.setFillColor(sf::Color(0, 160, 0));
+	chattingText.setStyle(sf::Text::Bold);
+
+
+	sf::Text text(mensaje, font, 14);
+
+
+	text.setFillColor(sf::Color(0, 160, 0));
+	text.setStyle(sf::Text::Bold);
+	text.setPosition(0, 560);
+
+	sf::RectangleShape separator(sf::Vector2f(800, 5));
+	separator.setFillColor(sf::Color(200, 200, 200, 255));
+	separator.setPosition(0, 550);
+
 
 	if (connectionType == 's')
 	{
 		sf::TcpListener listener;
 		listener.listen(5000);
 		listener.accept(socket);
-		text += "Server";
-		mode = 's';
+		intro += "Client";
+		
 		listener.close();
 	}
 	else if (connectionType == 'c')
 	{
-		socket.connect(ip, 5000);
-		text += "Client";
-		mode = 'r';
-	}
-
-	socket.send(text.c_str(), text.length() + 1);
-	socket.receive(buffer, sizeof(buffer), received);
-
-	std::cout << buffer << std::endl;
-
-	bool done = false;
-	while (!done)
-	{
-		if (mode == 's')
+		
+		Socket::Status status = socket.connect(ip, 5000);
+		
+		intro += "Server";
+		
+		if (status != Socket::Done) {
+			cout << "Error de connexi¨® al servidor\n";
+			exit(0);
+		}
+		else if(status==Socket::Done) {
+			cout << "Ok\n";	
+			
+			window.create(sf::VideoMode(screenDimensions.x, screenDimensions.y), "Chat");
+		}
+		while (window.isOpen())
 		{
-			std::getline(std::cin, text);
-			if (text.length() > 0)
+			if (aMensajes.size() >= 25) aMensajes.clear();
+
+			sf::Event evento;
+			while (window.pollEvent(evento))
 			{
-				socket.send(text.c_str(), text.length() + 1);
-				mode = 'r';
-				if (text == "exit")
+				switch (evento.type)
 				{
+				case sf::Event::Closed:
+					window.close();
+					break;
+				case sf::Event::KeyPressed:
+					if (evento.key.code == sf::Keyboard::Escape)
+						window.close();
+					else if (evento.key.code == sf::Keyboard::Return)
+					{
+						aMensajes.push_back(mensaje);
+						intro = mensaje;
+						//	SEND
+					
+						sf::Socket::Status statusSend = VSend(&socket, intro);
+						
+
+						/*if (statusSend == Socket::Status::Done) {
+							Socket::Status sendStatus = socket.send(intro.c_str(), intro.length() + 1);
+						}
+					
+						else{
+							intro = "Error de send";
+							aMensajes.push_back(intro);
+						}*/
+					
+						
+						if (aMensajes.size() > 25)
+						{
+							aMensajes.erase(aMensajes.begin(), aMensajes.begin() + 1);
+						}
+						mensaje = ">";
+					}
+					break;
+				case sf::Event::TextEntered:
+					if (evento.text.unicode >= 32 && evento.text.unicode <= 126)
+						mensaje += (char)evento.text.unicode;
+					else if (evento.text.unicode == 8 && mensaje.getSize() > 0)
+						mensaje.erase(mensaje.getSize() - 1, mensaje.getSize());
 					break;
 				}
 			}
-		}
-		else if (mode == 'r')
-		{
-			socket.receive(buffer, sizeof(buffer), received);
-			if (received > 0)
+			window.draw(separator);
+
+			receiveText(&socket, &aMensajes, buffer);
+
+			for (size_t i = 0; i < aMensajes.size(); i++)
 			{
-				std::cout << "Received: " << buffer << std::endl;
-				mode = 's';
-				if (strcmp(buffer, "exit") == 0)
-				{
-					break;
-				}
+				std::string chatting = aMensajes[i];
+				chattingText.setPosition(sf::Vector2f(0, 20 * i));
+				chattingText.setString(chatting);
+				window.draw(chattingText);
 			}
+			std::string mensaje_ = mensaje + "_";
+			text.setString(mensaje_);
+			window.draw(text);
+
+
+
+			window.display();
+			window.clear();
 		}
+		
 	}
 
-	socket.disconnect();*/
+	socket.disconnect();
+
+	system("pause");
 	return 0;
+}
+sf::Socket::Status VSend(sf::TcpSocket* sock, string msg) {
+
+	sf::Socket::Status status;
+	string toSend = msg;
+	size_t bytesSend;
+
+	do
+	{
+		status = sock->send(toSend.c_str(), toSend.length() + 1, bytesSend);
+		if (status == sf::Socket::Partial) {
+			toSend = toSend.substr(bytesSend + 1, toSend.length() - bytesSend);
+		}
+	} while (status == sf::Socket::Partial);
+	return status;
+}
+void receiveText(sf::TcpSocket* sock, std::vector<std::string>* aMensajes, char buffer[]) {
+	size_t received;
+	sf::Socket::Status status;
+	string tmp;
+
+	status = sock->receive(buffer, sizeof(&buffer), received);
+
+	switch (status)
+	{
+	case sf::Socket::Done:
+		buffer[received] = '\0';
+		tmp = buffer;
+		aMensajes->push_back(tmp);
+		break;
+	
+	case sf::Socket::Partial:
+		break;
+	case sf::Socket::Disconnected:
+		tmp = "Disconnected";
+		aMensajes->push_back(tmp);
+		exit(0);
+		break;
+	case sf::Socket::Error:
+		tmp = "Error to receive";
+		aMensajes->push_back(tmp);
+		break;
+	default:
+		break;
+	}
+	
 }
