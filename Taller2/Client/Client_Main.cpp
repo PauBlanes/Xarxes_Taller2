@@ -8,7 +8,12 @@ using namespace std;
 using namespace sf;
 
 sf::Socket::Status VSend(sf::TcpSocket* sock, string msg);
-void receiveText(sf::TcpSocket* sock, std::vector<std::string>* aMensajes, char buffer[]);
+//void receiveText(sf::TcpSocket* sock, std::vector<std::string>* aMensajes, char buffer[]);
+
+void receiveText(TcpSocket* sock, vector<string>* msgArray);
+
+string name;
+
 
 int main()
 {
@@ -17,24 +22,14 @@ int main()
 	//PER PROVAR QUE FUNCION
 	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
 	sf::TcpSocket socket;
-	sf::TcpListener LISTEN;
+	//sf::TcpListener LISTEN;
 	
 	char connectionType;
-	char buffer[2000];
-	std::size_t received;
-	std::string intro = "Connected to: ";
-
-	std::cout << "Enter (s) for Server, Enter (c) for Client: ";
-	std::cin >> connectionType;
-
+	//char buffer[2000];
+	//std::size_t received;
+	std::string intro = "Connected to: Servidor";
 	
-	//1.CONNECTARSE AL SERIDOR-ok
-	//	1.2VISUALITZAR-ok
-	//2.RECIBIR UN AVISO CUANDO SE CONNECTE UN CLIENTE NUEVO-ok
-	//3.RECIBIR UN AVISO CUANDO SE DESCONECTE UN CLIENTE-ok
-	//4.ENVIAR SUS MENSAJES-ok
-	//5.RECIBIR LOS MENSAJES DE LOS DEM'AS A TRAV'ES DEL SERVIDOR-ok
-
+	
 
 	std::vector<std::string> aMensajes;
 	aMensajes.push_back(intro);
@@ -69,29 +64,28 @@ int main()
 	separator.setPosition(0, 550);
 
 
-	if (connectionType == 's')
-	{
-		sf::TcpListener listener;
-		listener.listen(5000);
-		listener.accept(socket);
-		intro += "Client";
-		
-		listener.close();
-	}
-	else if (connectionType == 'c')
-	{
 		
 		Socket::Status status = socket.connect(ip, 5000);
-		
-		intro += "Server";
-		
+		socket.setBlocking(false);
+
+
 		if (status != Socket::Done) {
 			cout << "Error de connexi¨® al servidor\n";
 			exit(0);
 		}
 		else if(status==Socket::Done) {
-			cout << "Ok\n";	
-			
+			cout << "Ok\n";
+
+			char buffer[100];
+			size_t nameSize;
+			while (name=="")
+			{
+				
+				socket.receive(buffer, sizeof(buffer), nameSize);
+				buffer[nameSize]='\0';
+				name = buffer;
+
+			}
 			window.create(sf::VideoMode(screenDimensions.x, screenDimensions.y), "Chat");
 		}
 		while (window.isOpen())
@@ -111,22 +105,15 @@ int main()
 						window.close();
 					else if (evento.key.code == sf::Keyboard::Return)
 					{
-						aMensajes.push_back(mensaje);
-						intro = mensaje;
-						//	SEND
-					
-						sf::Socket::Status statusSend = VSend(&socket, intro);
-						
 
-						/*if (statusSend == Socket::Status::Done) {
-							Socket::Status sendStatus = socket.send(intro.c_str(), intro.length() + 1);
+						//	SEND
+						//Enviem al altre					
+						if (VSend(&socket, mensaje) != Socket::Status::Done) {
+							aMensajes.push_back("there is no connection");
 						}
-					
-						else{
-							intro = "Error de send";
-							aMensajes.push_back(intro);
-						}*/
-					
+
+
+
 						
 						if (aMensajes.size() > 25)
 						{
@@ -145,7 +132,7 @@ int main()
 			}
 			window.draw(separator);
 
-			receiveText(&socket, &aMensajes, buffer);
+			receiveText(&socket, &aMensajes);
 
 			for (size_t i = 0; i < aMensajes.size(); i++)
 			{
@@ -164,7 +151,7 @@ int main()
 			window.clear();
 		}
 		
-	}
+	
 
 	socket.disconnect();
 
@@ -174,7 +161,7 @@ int main()
 sf::Socket::Status VSend(sf::TcpSocket* sock, string msg) {
 
 	sf::Socket::Status status;
-	string toSend = msg;
+	string toSend = name + msg;
 	size_t bytesSend;
 
 	do
@@ -186,12 +173,13 @@ sf::Socket::Status VSend(sf::TcpSocket* sock, string msg) {
 	} while (status == sf::Socket::Partial);
 	return status;
 }
-void receiveText(sf::TcpSocket* sock, std::vector<std::string>* aMensajes, char buffer[]) {
+void receiveText(sf::TcpSocket* sock, std::vector<std::string>* aMensajes) {
 	size_t received;
 	sf::Socket::Status status;
 	string tmp;
+	char buffer[500];
 
-	status = sock->receive(buffer, sizeof(&buffer), received);
+	status = sock->receive(buffer, sizeof(buffer), received);
 
 	switch (status)
 	{

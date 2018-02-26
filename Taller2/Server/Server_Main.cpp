@@ -64,7 +64,8 @@ void ServerManager()
 
 					//Avisem a tots els clients que hi ha una nova connexio
 					SendAllPlayers("New client connected!", client);
-
+					string name = "c "+ std::to_string( clients.size());
+					client->send(name.c_str(),name.length());
 					//Si tots els jugadors ja estan conectats avisem
 					if (clients.size() == maxPlayers) {
 						cout << "Todos los jugadores estan conectados!" << endl;
